@@ -1,0 +1,143 @@
+In the dataclass Mission (found ../uuv_mission/dynamics.py)
+
+We know that the class used is np.ndarray, which means we need to make sure we have Numpy imported. Therefore reference, cave_height, and cave_depth 
+are expected to be Numpy arrays.
+
+reference represents points/values needed to the mission 
+cave height and cave depth give hight and depth of the cave the sub is moveing in.
+
+ChatGpt (explained this part from me)
+
+random_mission(cls, duration: int, scale: float):====
+
+    This method generates a random mission. It takes two parameters: duration, which might specify the length of the mission, and scale, 
+    which could determine the size or intensity of generated values. It calls a function generate_reference_and_limits(duration, scale) 
+    (not defined in the snippet), which likely returns three NumPy arrays for reference, cave_height, and cave_depth.
+    The method then creates an instance of Mission using these values and returns it.
+
+from_csv(cls, file_name: str):
+
+    This is a placeholder for a method that would likely read mission data from a CSV file. The method body is currently empty and 
+    marked with a comment indicating that it needs to be implemented.
+
+    since we have a CSV file there are mulitple ways we can implement it 
+    
+    1. You can read CSV files using Python's built-in csv module. Here’s a simple implementation for your from_csv method:
+
+    import csv
+    import numpy as np
+
+    @classmethod
+    def from_csv(cls, file_name: str):
+        with open(file_name, mode='r') as csvfile:
+            reader = csv.reader(csvfile)
+            # Assuming the first row is headers and the subsequent rows are data
+            data = list(reader)[1:]  # Skip header
+
+            reference = np.array([float(row[0]) for row in data])
+            cave_height = np.array([float(row[1]) for row in data])
+            cave_depth = np.array([float(row[2]) for row in data])
+
+        return cls(reference, cave_height, cave_depth)
+
+
+
+    2. The pandas library is a powerful tool for data manipulation and is particularly well-suited for reading CSV files. 
+    Here’s how you could implement it:
+
+    import pandas as pd
+    import numpy as np
+
+    @classmethod
+    def from_csv(cls, file_name: str):
+        df = pd.read_csv(file_name)
+        reference = df['reference'].to_numpy()
+        cave_height = df['cave_height'].to_numpy()
+        cave_depth = df['cave_depth'].to_numpy()
+
+        return cls(reference, cave_height, cave_depth)
+
+
+
+    3. If your CSV is structured simply, you could use NumPy’s built-in functions:
+
+    import numpy as np
+
+    @classmethod
+    def from_csv(cls, file_name: str):
+        data = np.loadtxt(file_name, delimiter=',', skiprows=1)
+        reference = data[:, 0]
+        cave_height = data[:, 1]
+        cave_depth = data[:, 2]
+
+        return cls(reference, cave_height, cave_depth)
+
+
+which of the 3 should we choose to implement we have headers and numerical so the best choice is pandas library for reading the .CSV file.
+reasons for why pandas:
+
+1. easy to use pandas and manipulate a .CSV file
+2. it automatically handles data types and missing values (which is useful for us since we have a large data set)
+3. and if in the future we need to manipulate the values for the cave or the mission pandas allows us to so with ease.
+
+#########################################################################################################################
+
+Submarine or controller when initialising a ClosedLoop
+
+1. if we were to do the sub
+
+Purpose: The Submarine represents the system we are trying to control, including its physical characteristics and state.
+
+When to Choose: If our goal is to simulate the behavior of a specific submarine (with defined parameters like size, weight, or initial state), 
+then you should initialize the ClosedLoop with a Submarine object. This would be the more intuitive choice if we want to focus on how the submarine 
+responds to various control strategies.
+
+
+2. we should use controller if our 
+
+Purpose: The controller is presumably responsible for deciding what actions to take based on the current state of the submarine and the mission 
+parameters. This might include algorithms like PID control, state feedback, etc.
+
+When to Choose: If your primary concern is experimenting with different control strategies or algorithms (regardless of the submarine’s 
+characteristics), then initializing the ClosedLoop with a controller makes sense. The controller will dictate how the submarine behaves 
+in response to the mission and disturbances.
+
+because we know we need to implement a PD controller its best we initialising the ClosedLoop with a controller, we could do both for since it 
+would tell us how this specific "sub" behaves with with different controllers if we wanted to analyse the best controller etc.
+
+1. create a new file called control.py as asked by the assignment and implement it.
+2. make changes to dynamic.py ClosedLoop so that our controller is implemented in our ClosedLoop
+3. when we come to use ClosedLoop we need to initialise it with sub object and PDController object some what like this 
+
+from control import PDController
+from dynamic import ClosedLoop
+
+# Assuming you have already defined the Submarine class and mission
+submarine = Submarine(...)
+controller = PDController()
+closed_loop_system = ClosedLoop(submarine, controller)
+
+################################################################################################################################
+
+Now that the changes are visible in the code. read dynamic.py and control.py we can move on to the demo.ipynb file.
+1. we need to import the relevent modules (and you will need to install Numpy and pandas. do this by opening the terminal, view terminal. 
+type pip install and copy and paste what is in requirements.txt)
+2. you need to instantiate the sub and controller 
+3. load mission data from csv file and tell it where it is found 
+4. the rest of the code is given 
+ important! dont forget to add this line to dynamic.py "from .control import PDController" and to 
+# Add the parent directory to the path
+import sys
+import os
+sys.path.append(os.path.abspath('..'))  # Add the parent directory
+
+
+#####
+ This only looks efficient because I have this entire week and 2! 12hr days making mistakes and I have 3 other versions of this :) 
+ To commit work make sure you are signed in and have your user name added to git. you can do this by opening terminal and typing 
+ git config --global user.name "My Name"
+ git config --global user.email "myemail@example.com" 
+ make sure you save the changes you make 
+
+ I have ran the code mulitple times to test the kd and kp values, i sampled it over 10 photos at the values of KP=0.2, KD=0.6 and not 
+ once did it touch the cave so I consider it passed.
